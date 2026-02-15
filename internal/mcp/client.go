@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/mark3labs/mcp-go/client"
@@ -298,23 +299,26 @@ func extractURLFromText(text string) string {
 	return ""
 }
 
+var collectionIDRe = regexp.MustCompile(`collection://([a-fA-F0-9-]+)`)
+
 // ResolveDataSourceID fetches a database by ID and extracts the data source ID
-// from the collection:// URL in the content. If the ID is already a data source ID,
-// it's returned as-is (the fetch will fail, and we fall back).
+// from the collection:// URL in the content. If the fetch returns a not-found
+// style error, it assumes the ID is already a data source ID and returns it as-is.
 func (c *Client) ResolveDataSourceID(ctx context.Context, id string) (string, error) {
 	result, err := c.Fetch(ctx, id)
 	if err != nil {
-		return id, nil // assume it's already a data source ID
+		// If it looks like a not-found error, assume the ID is already a data source ID.
+		// Propagate other errors (network, auth) so the caller gets a useful message.
+		errMsg := strings.ToLower(err.Error())
+		if strings.Contains(errMsg, "not found") || strings.Contains(errMsg, "not_found") || strings.Contains(errMsg, "404") {
+			return id, nil
+		}
+		return "", fmt.Errorf("fetching database %s: %w", id, err)
 	}
 
 	// Look for collection://UUID pattern in the content
-	if idx := strings.Index(result.Content, "collection://"); idx >= 0 {
-		start := idx + len("collection://")
-		end := start
-		for end < len(result.Content) && result.Content[end] != '"' && result.Content[end] != '}' && result.Content[end] != ' ' && result.Content[end] != '\n' {
-			end++
-		}
-		dsID := result.Content[start:end]
+	if m := collectionIDRe.FindStringSubmatch(result.Content); m != nil {
+		dsID := m[1]
 		if len(strings.ReplaceAll(dsID, "-", "")) == 32 {
 			return dsID, nil
 		}

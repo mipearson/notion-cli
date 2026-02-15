@@ -144,8 +144,12 @@ func resolvePageByName(ctx context.Context, client *mcp.Client, name string) (st
 }
 
 func ambiguousError(name string, matches []mcp.SearchResult) error {
+	return ambiguousErrorForType("page", name, matches)
+}
+
+func ambiguousErrorForType(objectType, name string, matches []mcp.SearchResult) error {
 	var b strings.Builder
-	fmt.Fprintf(&b, "ambiguous page name %q, matching pages:\n", name)
+	fmt.Fprintf(&b, "ambiguous %s name %q, matching %ss:\n", objectType, name, objectType)
 	limit := len(matches)
 	if limit > 5 {
 		limit = 5
@@ -161,7 +165,7 @@ func ambiguousError(name string, matches []mcp.SearchResult) error {
 	if len(matches) > 5 {
 		fmt.Fprintf(&b, "  ... and %d more\n", len(matches)-5)
 	}
-	b.WriteString("Use a page URL or ID to be specific.")
+	fmt.Fprintf(&b, "Use a %s URL or ID to be specific.", objectType)
 	return &output.UserError{Message: b.String()}
 }
 
@@ -208,7 +212,7 @@ func resolveDatabaseByName(ctx context.Context, client *mcp.Client, name string)
 	}
 
 	if len(exactMatches) > 1 {
-		return "", ambiguousError(name, exactMatches)
+		return "", ambiguousErrorForType("database", name, exactMatches)
 	}
 
 	var partialMatches []mcp.SearchResult
@@ -225,7 +229,7 @@ func resolveDatabaseByName(ctx context.Context, client *mcp.Client, name string)
 		return "", &output.UserError{Message: "database not found: " + name}
 	}
 
-	return "", ambiguousError(name, partialMatches)
+	return "", ambiguousErrorForType("database", name, partialMatches)
 }
 
 // IsEmoji returns true if the rune is an emoji character.

@@ -187,8 +187,8 @@ func runPageCreate(ctx *Context, title, parent, content string) error {
 type PageUploadCmd struct {
 	File     string `arg:"" help:"Markdown file to upload" type:"existingfile"`
 	Title    string `help:"Page title (default: filename or first heading)" short:"t"`
-	Parent   string `help:"Parent page URL, name, or ID" short:"p"`
-	ParentDB string `help:"Parent database URL, name, or ID" name:"parent-db" short:"d"`
+	Parent   string `help:"Parent page URL, name, or ID" short:"p" xor:"parent"`
+	ParentDB string `help:"Parent database URL, name, or ID" name:"parent-db" short:"d" xor:"parent"`
 	Icon     string `help:"Emoji icon for the page" short:"i"`
 	JSON     bool   `help:"Output as JSON" short:"j"`
 }
@@ -372,8 +372,8 @@ func runPageEdit(ctx *Context, page, replace, find, replaceWith, appendText stri
 type PageSyncCmd struct {
 	File     string `arg:"" help:"Markdown file to sync" type:"existingfile"`
 	Title    string `help:"Page title (default: filename or first heading)" short:"t"`
-	Parent   string `help:"Parent page URL, name, or ID" short:"p"`
-	ParentDB string `help:"Parent database URL, name, or ID" name:"parent-db" short:"d"`
+	Parent   string `help:"Parent page URL, name, or ID" short:"p" xor:"parent"`
+	ParentDB string `help:"Parent database URL, name, or ID" name:"parent-db" short:"d" xor:"parent"`
 	Icon     string `help:"Emoji icon for the page" short:"i"`
 	JSON     bool   `help:"Output as JSON" short:"j"`
 }
